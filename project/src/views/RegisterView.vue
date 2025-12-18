@@ -12,49 +12,130 @@
         <p class="welcome-subtitle">只需几步，完成账号注册</p>
       </section>
 
-      <form class="form" @submit.prevent>
-        <div class="form-item">
-          <label class="label">手机号</label>
-          <input
-            class="input"
+      <el-form
+        class="form"
+        :model="form"
+        label-position="top"
+        @submit.prevent
+        @keyup.enter.native="handleSubmit"
+      >
+        <el-form-item label="姓名">
+          <el-input
+            v-model="form.name"
+            maxlength="16"
+            placeholder="请输入姓名或昵称"
+            clearable
+          />
+        </el-form-item>
+
+        <el-form-item label="手机号">
+          <el-input
+            v-model="form.phone"
             type="tel"
-            placeholder="请输入手机号"
             maxlength="11"
+            placeholder="请输入手机号"
+            clearable
           />
-        </div>
+        </el-form-item>
 
-        <div class="form-item">
-          <label class="label">设置密码</label>
-          <input
-            class="input"
+        <el-form-item label="设置密码">
+          <el-input
+            v-model="form.password"
             type="password"
+            show-password
             placeholder="至少 6 位数字或字母"
+            clearable
           />
-        </div>
+        </el-form-item>
 
-        <div class="form-item">
-          <label class="label">确认密码</label>
-          <input
-            class="input"
+        <el-form-item label="确认密码">
+          <el-input
+            v-model="form.confirm"
             type="password"
+            show-password
             placeholder="请再次输入密码"
+            clearable
           />
-        </div>
+        </el-form-item>
 
-        <button type="submit" class="btn primary submit-btn">
+        <el-button
+          class="submit-btn"
+          type="primary"
+          size="large"
+          round
+          :loading="loading"
+          @click="handleSubmit"
+        >
           注册
-        </button>
+        </el-button>
 
         <p class="tips">
           已有账号？
           <router-link to="/login">去登录</router-link>
         </p>
-      </form>
+      </el-form>
     </main>
   </div>
 </template>
 
 <script setup lang="ts">
+import { reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+
+const router = useRouter()
+const loading = ref(false)
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3000'
+
+const form = reactive({
+  name: '',
+  phone: '',
+  password: '',
+  confirm: '',
+})
+
+const handleSubmit = async () => {
+  if (!form.name || !form.phone || !form.password || !form.confirm) {
+    ElMessage.warning('请填写完整的注册信息')
+    return
+  }
+
+  if (form.password !== form.confirm) {
+    ElMessage.warning('两次输入的密码不一致')
+    return
+  }
+
+  loading.value = true
+  try {
+    const response = await fetch(`${API_BASE}/api/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: form.name,
+        phone: form.phone,
+        password: form.password,
+      }),
+    })
+
+    if (response.status === 409) {
+      ElMessage.error('该手机号已注册，请直接登录')
+      router.push('/login')
+      return
+    }
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || '注册失败')
+    }
+
+    ElMessage.success('注册成功，请登录')
+    router.push('/login')
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '注册失败')
+  } finally {
+    loading.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -111,55 +192,11 @@
 
 .form {
   margin-top: 32px;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.form-item {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.label {
-  font-size: 14px;
-  color: #4b5563;
-}
-
-.input {
-  width: 100%;
-  padding: 12px 14px;
-  font-size: 15px;
-  border-radius: 12px;
-  border: 1px solid #d1d5db;
-  outline: none;
-  background: #ffffff;
-}
-
-.input:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.2);
-}
-
-.btn {
-  border-radius: 999px;
-  border: none;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.btn.primary {
-  width: 100%;
-  padding: 12px 14px;
-  font-size: 16px;
-  background: linear-gradient(135deg, #2563eb, #4f46e5);
-  color: #ffffff;
-  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3);
 }
 
 .submit-btn {
   margin-top: 10px;
+  width: 100%;
 }
 
 .tips {
@@ -180,5 +217,3 @@
   }
 }
 </style>
-
-
