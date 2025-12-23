@@ -304,7 +304,29 @@ const handleSubmit = async () => {
 }
 
 /* 响应式设计 */
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
+  .login-page {
+    padding: 0 40px;
+  }
+
+  .page-header {
+    padding: 100px 0 60px;
+  }
+  
+  .brand-title {
+    font-size: 48px;
+  }
+  
+  .page-subtitle {
+    font-size: 20px;
+  }
+
+  .login-form {
+    max-width: 420px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
   .page-header {
     padding: 80px 0 50px;
   }
@@ -315,6 +337,45 @@ const handleSubmit = async () => {
   
   .page-subtitle {
     font-size: 18px;
+  }
+
+  .login-form {
+    max-width: 400px;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-page {
+    padding: 0 16px;
+  }
+
+  .page-header {
+    padding: 40px 0 30px;
+  }
+
+  .brand-title {
+    font-size: 28px;
+  }
+
+  .page-subtitle {
+    font-size: 14px;
+  }
+
+  .login-form {
+    padding-bottom: 30px;
+  }
+
+  :deep(.el-form-item) {
+    margin-bottom: 16px;
+  }
+
+  :deep(.el-input__wrapper) {
+    height: 44px;
+  }
+
+  .submit-btn {
+    height: 44px;
+    font-size: 15px;
   }
 }
 </style>
