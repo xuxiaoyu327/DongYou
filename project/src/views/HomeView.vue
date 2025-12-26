@@ -146,6 +146,14 @@
                 <span>我的</span>
             </div>
         </footer>
+
+        <!-- AI 悬浮按钮 -->
+        <div class="ai-float-button" @click="goToAI">
+            <el-icon :size="24">
+                <ChatLineRound />
+            </el-icon>
+            <span class="ai-button-text">AI助手</span>
+        </div>
     </div>
 </template>
 
@@ -458,7 +466,7 @@ const loadSearchHistory = () => {
 
 // 导航方法
 const goToShop = () => {
-    ElMessage.info('商城功能开发中')
+    router.push('/shop')
 }
 
 const goToAdd = () => {
@@ -474,6 +482,10 @@ const goToAdd = () => {
 
 const goToProfile = () => {
     router.push('/mine')
+}
+
+const goToAI = () => {
+    router.push('/ai')
 }
 
 const viewPost = (postId: number) => {
@@ -1252,6 +1264,103 @@ onUnmounted(() => {
 
     .author-name {
         font-size: 11px;
+    }
+
+    .ai-float-button {
+        width: 56px;
+        height: 56px;
+        padding: 0;
+    }
+
+    .ai-button-text {
+        display: none;
+    }
+}
+
+/* AI 悬浮按钮 */
+.ai-float-button {
+    position: fixed;
+    right: 20px;
+    bottom: 100px;
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 999;
+    color: white;
+    border: none;
+    overflow: hidden;
+}
+
+.ai-float-button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.ai-float-button:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+.ai-float-button:hover {
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.5);
+}
+
+.ai-float-button:active {
+    transform: translateY(-2px) scale(1.02);
+}
+
+.ai-float-button .el-icon {
+    position: relative;
+    z-index: 1;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+.ai-button-text {
+    position: relative;
+    z-index: 1;
+    font-size: 12px;
+    font-weight: 500;
+    margin-top: 2px;
+    white-space: nowrap;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+    .ai-float-button {
+        right: 16px;
+        bottom: 90px;
+        width: 56px;
+        height: 56px;
+    }
+
+    .ai-button-text {
+        font-size: 10px;
     }
 }
 </style>

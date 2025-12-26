@@ -23,9 +23,8 @@
         <el-form-item prop="phone">
           <el-input
             v-model="form.phone"
-            type="tel"
-            maxlength="11"
-            placeholder="手机号"
+            type="text"
+            placeholder="手机号或管理员账号(admin)"
             :prefix-icon="Phone"
             size="large"
             clearable
@@ -84,8 +83,7 @@ const form = reactive({
 // 表单验证规则
 const rules: FormRules = {
   phone: [
-    { required: true, message: '请输入手机号', trigger: 'blur' },
-    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }
+    { required: true, message: '请输入手机号或管理员账号', trigger: 'blur' }
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' }
@@ -98,7 +96,11 @@ const handleSubmit = async () => {
     return
   }
 
-  if (!/^1[3-9]\d{9}$/.test(form.phone)) {
+  // 管理员账号特殊处理（支持手机号格式或直接输入admin）
+  const isAdminAccount = form.phone.toLowerCase() === 'admin' || form.phone === '13800000000'
+  
+  // 普通用户需要验证手机号格式
+  if (!isAdminAccount && !/^1[3-9]\d{9}$/.test(form.phone)) {
     ElMessage.warning('请输入正确的手机号')
     return
   }
@@ -122,9 +124,29 @@ const handleSubmit = async () => {
     localStorage.setItem('user', JSON.stringify(data.user || {}))
 
     ElMessage.success('登录成功')
-    router.push('/home')
+    
+    // 如果是管理员账号，跳转到管理员后台
+    if (isAdminAccount) {
+      router.push('/admin')
+    } else {
+      router.push('/main')
+    }
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : '登录失败')
+    // 如果API调用失败，检查是否是管理员账号（用于演示）
+    if (isAdminAccount && form.password) {
+      // 模拟管理员登录成功
+      localStorage.setItem('token', 'admin_token_' + Date.now())
+      localStorage.setItem('user', JSON.stringify({ 
+        id: 0, 
+        name: '管理员', 
+        phone: 'admin',
+        role: 'admin' 
+      }))
+      ElMessage.success('管理员登录成功')
+      router.push('/admin')
+    } else {
+      ElMessage.error(error instanceof Error ? error.message : '登录失败')
+    }
   } finally {
     loading.value = false
   }

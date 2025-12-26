@@ -107,6 +107,12 @@
                         @click="activeTab = 'comments'">
                         我的评论
                     </div>
+                    <div 
+                        class="tab-item" 
+                        :class="{ active: activeTab === 'orders' }"
+                        @click="activeTab = 'orders'">
+                        我的订单
+                    </div>
                 </div>
 
                 <!-- 我的攻略 -->
@@ -234,6 +240,58 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- 我的订单 -->
+                <div v-if="activeTab === 'orders'" class="tab-content">
+                    <div v-if="myOrders.length === 0" class="empty-state">
+                        <el-icon :size="64" class="empty-icon">
+                            <ShoppingBag />
+                        </el-icon>
+                        <p class="empty-text">还没有订单</p>
+                        <el-button type="primary" @click="goToShop">去商城看看</el-button>
+                    </div>
+                    <div v-else class="orders-list">
+                        <div 
+                            v-for="order in myOrders" 
+                            :key="order.id" 
+                            class="order-item">
+                            <div class="order-header">
+                                <div class="order-info">
+                                    <span class="order-number">订单号：{{ order.orderNumber }}</span>
+                                    <span class="order-time">{{ formatTime(order.createdAt) }}</span>
+                                </div>
+                                <el-tag 
+                                    :type="getOrderStatusType(order.status)"
+                                    size="small">
+                                    {{ getOrderStatusText(order.status) }}
+                                </el-tag>
+                            </div>
+                            <div class="order-content" @click="viewProduct(order.productId)">
+                                <img 
+                                    :src="order.productImage || DEFAULT_IMAGE" 
+                                    :alt="order.productName"
+                                    @error="handleImageError"
+                                    loading="lazy"
+                                    class="order-product-image" />
+                                <div class="order-product-info">
+                                    <h4 class="order-product-name">{{ order.productName }}</h4>
+                                    <div class="order-meta">
+                                        <span class="order-payment-method" v-if="order.paymentMethod">
+                                            支付方式：{{ getPaymentMethodText(order.paymentMethod) }}
+                                        </span>
+                                        <span class="order-paid-time" v-if="order.paidAt">
+                                            支付时间：{{ formatTime(order.paidAt) }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="order-price">
+                                    <span class="price-label">金额</span>
+                                    <span class="price-value">¥{{ order.price.toFixed(2) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
 
@@ -302,7 +360,8 @@ import {
     Camera,
     Edit,
     Delete,
-    House
+    House,
+    ShoppingBag
 } from '@element-plus/icons-vue'
 
 // ==================== 类型定义 ====================
@@ -343,7 +402,20 @@ interface Comment {
     }
 }
 
-type TabType = 'posts' | 'likes' | 'comments'
+interface Order {
+    id: number
+    productId: number
+    productName: string
+    productImage: string
+    price: number
+    paymentMethod: string
+    status: 'pending' | 'paid' | 'completed' | 'cancelled'
+    orderNumber: string
+    createdAt: string
+    paidAt: string | null
+}
+
+type TabType = 'posts' | 'likes' | 'comments' | 'orders'
 type StatKey = 'postsCount' | 'likesCount' | 'commentsCount'
 
 // ==================== 常量定义 ====================
@@ -360,7 +432,8 @@ const GENDER_MAP: Record<string, string> = {
 const TAB_CONFIG: Record<TabType, { endpoint: string; dataKey: string }> = {
     posts: { endpoint: '/api/user/my-posts', dataKey: 'posts' },
     likes: { endpoint: '/api/user/my-likes', dataKey: 'posts' },
-    comments: { endpoint: '/api/user/my-comments', dataKey: 'comments' }
+    comments: { endpoint: '/api/user/my-comments', dataKey: 'comments' },
+    orders: { endpoint: '/api/user/my-orders', dataKey: 'orders' }
 }
 
 // ==================== 路由和状态管理 ====================
@@ -375,6 +448,7 @@ const activeTab = ref<TabType>('posts')
 const myPosts = ref<Post[]>([])
 const myLikes = ref<Post[]>([])
 const myComments = ref<Comment[]>([])
+const myOrders = ref<Order[]>([])
 
 // UI 状态
 const showSettings = ref(false)
@@ -556,6 +630,9 @@ const loadTabData = async (): Promise<void> => {
         case 'comments':
             myComments.value = data
             break
+        case 'orders':
+            myOrders.value = data
+            break
     }
 }
 
@@ -570,7 +647,8 @@ const watchTab = async (newTab: TabType): Promise<void> => {
     const isDataLoaded = 
         (newTab === 'posts' && myPosts.value.length > 0) ||
         (newTab === 'likes' && myLikes.value.length > 0) ||
-        (newTab === 'comments' && myComments.value.length > 0)
+        (newTab === 'comments' && myComments.value.length > 0) ||
+        (newTab === 'orders' && myOrders.value.length > 0)
 
     if (!isDataLoaded) {
         await loadTabData()
@@ -607,6 +685,58 @@ const goToAdd = (): void => {
  */
 const goToHome = (): void => {
     router.push('/main')
+}
+
+/**
+ * 跳转到商城
+ */
+const goToShop = (): void => {
+    router.push('/shop')
+}
+
+/**
+ * 查看商品详情
+ */
+const viewProduct = (productId: number): void => {
+    router.push(`/product/${productId}`)
+}
+
+/**
+ * 获取订单状态文本
+ */
+const getOrderStatusText = (status: string): string => {
+    const statusMap: Record<string, string> = {
+        'pending': '待支付',
+        'paid': '已支付',
+        'completed': '已完成',
+        'cancelled': '已取消'
+    }
+    return statusMap[status] || status
+}
+
+/**
+ * 获取订单状态类型
+ */
+const getOrderStatusType = (status: string): string => {
+    const typeMap: Record<string, string> = {
+        'pending': 'warning',
+        'paid': 'success',
+        'completed': 'info',
+        'cancelled': 'danger'
+    }
+    return typeMap[status] || ''
+}
+
+/**
+ * 获取支付方式文本
+ */
+const getPaymentMethodText = (method: string): string => {
+    const methodMap: Record<string, string> = {
+        'alipay': '支付宝',
+        'wechat': '微信支付',
+        'balance': '余额支付'
+    }
+    return methodMap[method] || method
 }
 
 // ==================== 头像编辑相关 ====================
@@ -1658,6 +1788,117 @@ onMounted(() => {
         font-size: 11px;
     }
 
+    /* 订单列表 */
+    .orders-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .order-item {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        padding: 16px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        border: 1px solid rgba(231, 84, 128, 0.1);
+        transition: all 0.3s;
+    }
+
+    .order-item:hover {
+        box-shadow: 0 6px 16px rgba(231, 84, 128, 0.15);
+        transform: translateY(-2px);
+    }
+
+    .order-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid rgba(231, 84, 128, 0.1);
+    }
+
+    .order-info {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .order-number {
+        font-size: 14px;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .order-time {
+        font-size: 12px;
+        color: #999;
+    }
+
+    .order-content {
+        display: flex;
+        gap: 12px;
+        cursor: pointer;
+        align-items: center;
+    }
+
+    .order-product-image {
+        width: 80px;
+        height: 80px;
+        border-radius: 8px;
+        object-fit: cover;
+        background: linear-gradient(135deg, #ffeaea 0%, #fff5f5 100%);
+        flex-shrink: 0;
+    }
+
+    .order-product-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .order-product-name {
+        font-size: 16px;
+        font-weight: 600;
+        color: #333;
+        margin: 0 0 8px 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .order-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        font-size: 12px;
+        color: #666;
+    }
+
+    .order-payment-method,
+    .order-paid-time {
+        font-size: 12px;
+        color: #999;
+    }
+
+    .order-price {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 4px;
+    }
+
+    .price-label {
+        font-size: 12px;
+        color: #999;
+    }
+
+    .price-value {
+        font-size: 18px;
+        font-weight: 700;
+        color: #e75480;
+    }
+
     .edit-dialog {
         max-width: 95%;
     }
@@ -1798,6 +2039,27 @@ onMounted(() => {
         flex-direction: column;
         align-items: flex-start;
         gap: 4px;
+    }
+
+    .order-item {
+        padding: 12px;
+    }
+
+    .order-product-image {
+        width: 60px;
+        height: 60px;
+    }
+
+    .order-product-name {
+        font-size: 14px;
+    }
+
+    .order-meta {
+        font-size: 11px;
+    }
+
+    .price-value {
+        font-size: 16px;
     }
 
     .preview-avatar {

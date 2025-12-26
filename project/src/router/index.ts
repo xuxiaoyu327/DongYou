@@ -7,7 +7,12 @@ const ROUTE_PATHS = {
   REGISTER: '/register',
   ADD: '/add',
   POST_DETAIL: '/post/:id',
-  MINE: '/mine'
+  MINE: '/mine',
+  SHOP: '/shop',
+  PRODUCT_DETAIL: '/product/:id',
+  PAYMENT: '/payment',
+  ADMIN: '/admin',
+  AI: '/ai'
 }
 
 const ROUTE_NAMES = {
@@ -17,7 +22,12 @@ const ROUTE_NAMES = {
   REGISTER: 'register',
   ADD: 'add',
   POST_DETAIL: 'postDetail',
-  MINE: 'mine'
+  MINE: 'mine',
+  SHOP: 'shop',
+  PRODUCT_DETAIL: 'productDetail',
+  PAYMENT: 'payment',
+  ADMIN: 'admin',
+  AI: 'ai'
 }
 
 const routes = [
@@ -62,6 +72,36 @@ const routes = [
     name: ROUTE_NAMES.MINE,
     component: () => import('@/views/button/MineView.vue'),
     meta: { title: '我的', requiresAuth: true }
+  },
+  {
+    path: ROUTE_PATHS.SHOP,
+    name: ROUTE_NAMES.SHOP,
+    component: () => import('@/views/button/ShopView.vue'),
+    meta: { title: '商城', requiresAuth: false }
+  },
+  {
+    path: ROUTE_PATHS.PRODUCT_DETAIL,
+    name: ROUTE_NAMES.PRODUCT_DETAIL,
+    component: () => import('@/views/button/BuyView.vue'),
+    meta: { title: '商品详情', requiresAuth: false }
+  },
+  {
+    path: ROUTE_PATHS.PAYMENT,
+    name: ROUTE_NAMES.PAYMENT,
+    component: () => import('@/views/button/PaymentView.vue'),
+    meta: { title: '支付', requiresAuth: true }
+  },
+  {
+    path: ROUTE_PATHS.ADMIN,
+    name: ROUTE_NAMES.ADMIN,
+    component: () => import('@/views/AdminView.vue'),
+    meta: { title: '管理员后台', requiresAuth: true }
+  },
+  {
+    path: ROUTE_PATHS.AI,
+    name: ROUTE_NAMES.AI,
+    component: () => import('@/views/button/AIView.vue'),
+    meta: { title: 'AI旅游助手', requiresAuth: false }
   }
 ]
 
